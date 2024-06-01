@@ -5,8 +5,10 @@
 #define RELAY_PIN 0
 #define DHT11_PIN 2
 const char *ssid = "qi";                    // wifi ssid
-const char *password = "xxxxxxx";           // wifi password
-const char *mqtt_server = "192.168.50.102"; // mqtt server address
+const char *password = "xxxxxxxx";           // wifi password
+const char *mqtt_server = "mqtt.home"; // mqtt server address
+const char *mqtt_user = "admin"; // mqtt user
+const char *mqtt_password = "xxxxxxxx"; // mqtt user
 
 // const String macAddress = WiFi.macAddress();
 // const char* clientID = macAddress.c_str();    //MAC address
@@ -60,7 +62,7 @@ void reconnect()
   {
     Serial.println("reconnecting mqtt...");
     delay(1000);
-    if (client.connect(clientID, "admin", "mengqi2"))
+    if (client.connect(clientID, mqtt_user, mqtt_password))
     { // connected
       Serial.print("MQTT connected!");
     }
@@ -83,8 +85,10 @@ void loop()
   int err = SimpleDHTErrSuccess;
   if ((err = dht11.read(&temperature, &humidity, NULL)) != SimpleDHTErrSuccess)
   {
-    Serial.println("Read DHT11 failed, err=");
+    Serial.print("Read DHT11 failed, err=");
     Serial.println(err);
+    Serial.println(String(temperature).c_str());
+    Serial.println(String(humidity).c_str());
     delay(1000);
   }
   else
@@ -92,13 +96,13 @@ void loop()
     client.publish("rack/temperature", String(temperature).c_str()); // publish temperature
     client.publish("rack/humidity", String(humidity).c_str());       // publish humidity
     //  Close the relay if the temperature is greater than 30
-    if (temperature > 40)
+    if (temperature > 40 && digitalRead(RELAY_PIN) == HIGH)
     {
-      digitalWrite(RELAY_PIN, LOW); // Assuming HIGH closes the relay
+      digitalWrite(RELAY_PIN, LOW); // Assuming LOW closes the relay
     }
-    else if (temperature < 35) //To avoid frequent switching of the relay
+    else if (temperature < 35 && digitalRead(RELAY_PIN) == LOW) //To avoid frequent switching of the relay
     {
-      digitalWrite(RELAY_PIN, HIGH); // Assuming LOW opens the relay
+      digitalWrite(RELAY_PIN, HIGH); // Assuming HIGH opens the relay
     }
     delay(3600000);
   }
